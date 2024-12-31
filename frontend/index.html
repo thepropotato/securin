@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE Viewer</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=chevron_left" />
+</head>
+<body>
+    <h1>CVE Viewer</h1>
+    
+    <div class="pagination">
+        <label for="results-per-page">Results Per Page:
+            <select id="results-per-page">
+                <option value="10">10</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </label>
+        <div id="current-page-display"></div>
+    </div>
+    
+    <div class="pagination-controls" id="pagination-controls"></div>
+    
+    <table id="cve-table">
+        <thead>
+            <tr>
+                <th>CVE ID</th>
+                <th>Identifier</th>
+                <th>Published Date</th>
+                <th>Last Modified Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const tableBody = document.querySelector('#cve-table tbody');
+        const resultsPerPage = document.querySelector('#results-per-page');
+        const paginationControls = document.querySelector('#pagination-controls');
+        const currentPageDisplay = document.querySelector('#current-page-display');
+
+        let currentPage = 1;
+        let pageSize = 10;
+        let totalRecords = 1;
+        let totalPages = 1;
+
+        function parseDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                hour12: true
+            });
+        }
+
+        function fetchData(page, limit) {
+            console.log(`Fetching data for page ${page} and limit ${limit}`);
+            fetch(`http://127.0.0.1:5000/cves/list?page=${page}&limit=${limit}`)
+                .then(response => response.json())
+                .then(data => {
+                    tableBody.innerHTML = '';
+                    totalRecords = data.total_records; // Store total number of records
+                    totalPages = Math.ceil(totalRecords / pageSize); // Calculate total pages
+                    data.data.forEach(item => {
+                        const row = document.createElement('tr');
+                        const publishedDate = parseDate(item.published_date); // Parse and format the date
+                        const lastModifiedDate = parseDate(item.last_modified_date); // Parse and format the date
+                        row.innerHTML = ` 
+                            <td>${item.cve_id || 'N/A'}</td>
+                            <td>${item.identifier || 'N/A'}</td>
+                            <td>${publishedDate || 'N/A'}</td>
+                            <td>${lastModifiedDate || 'N/A'}</td>
+                            <td>${item.status || 'N/A'}</td>
+                        `;
+                        row.addEventListener('click', () => {
+                            let baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+                            window.location.href = `${baseUrl}/details.html?cve_id=${item.cve_id}`;
+                        });
+                        tableBody.appendChild(row);
+                    });
+                    updatePaginationControls();
+                    updateCurrentPageDisplay();
+                });
+        }
+
+        function updatePaginationControls() {
+            paginationControls.innerHTML = '';
+
+            // Previous button
+            const previousButton = document.createElement('button');
+            previousButton.textContent = 'Previous';
+            previousButton.disabled = currentPage <= 1;
+            previousButton.addEventListener('click', () => {
+                currentPage--;
+                fetchData(currentPage, pageSize);
+            });
+            paginationControls.appendChild(previousButton);
+
+            // Page buttons (showing 5 at a time)
+            const startPage = currentPage;
+            const endPage = Math.min(currentPage + 4, totalPages);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.textContent = i;
+                pageButton.disabled = i === currentPage;
+                pageButton.addEventListener('click', () => {
+                    currentPage = i;
+                    fetchData(currentPage, pageSize);
+                });
+                paginationControls.appendChild(pageButton);
+            }
+
+            // Next button
+            const nextButton = document.createElement('button');
+            nextButton.textContent = 'Next';
+            nextButton.disabled = currentPage >= totalPages;
+            nextButton.addEventListener('click', () => {
+                currentPage++;
+                fetchData(currentPage, pageSize);
+            });
+            paginationControls.appendChild(nextButton);
+        }
+
+        function updateCurrentPageDisplay() {
+            const startRecord = (currentPage - 1) * pageSize + 1;
+            const endRecord = Math.min(currentPage * pageSize, totalRecords);
+            currentPageDisplay.innerHTML = `${startRecord}-${endRecord} records of ${totalRecords}`;
+        }
+
+        resultsPerPage.addEventListener('change', (e) => {
+            pageSize = parseInt(e.target.value, 10);
+            currentPage = 1; // Reset to first page when changing page size
+            fetchData(currentPage, pageSize);
+        });
+
+        fetchData(currentPage, pageSize);
+    </script>
+</body>
+</html>

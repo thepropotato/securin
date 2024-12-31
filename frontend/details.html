@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE Details</title>
+
+    <link rel="stylesheet" href="styles.css">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body id="details-page">
+    <h1> 
+    <i class="fa-solid fa-arrow-left" onclick="window.history.back()"></i>
+    CVE Details
+    </h1>
+    <div id="cve-details" class="cve-details"></div>
+
+    <script>
+        // Function to get query parameter from URL
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Fetch CVE data
+        function loadCveDetails() {
+            const cveId = getQueryParam('cve_id');
+            if (!cveId) {
+                document.getElementById('cve-details').innerHTML = 'No CVE ID provided';
+                return;
+            }
+
+            fetch(`http://127.0.0.1:5000/cves/${cveId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('cve-details').innerHTML = `Error: ${data.error}`;
+                        return;
+                    }
+
+                    const cve = data.data;
+                    console.log(cve);
+
+                    const descriptionsHTML = cve.description.map(desc => `
+                        <p><strong>Description (${desc.lang}):</strong> ${desc.value}</p>
+                    `).join('');
+
+                    let cvssMetrics = cve.cvss_metrics ? JSON.stringify(cve.cvss_metrics) : null;
+                    cvssMetrics = JSON.parse(cvssMetrics);
+                    const cvssMetricsHTML = `
+                        ${cvssMetrics && cvssMetrics.cvss_v2 ? `
+                            <h2>CVSS v2 Metrics</h2>
+                            <table>
+                                <tr>
+                                    <th>Base Score</th>
+                                    <th>Vector String</th>
+                                    <th>Access Vector</th>
+                                    <th>Confidentiality Impact</th>
+                                    <th>Integrity Impact</th>
+                                    <th>Availability Impact</th>
+                                </tr>
+                                <tr>
+                                    <td>${cvssMetrics.cvss_v2.base_score || 'N/A'}</td>
+                                    <td>${cvssMetrics.cvss_v2.vector_string || 'N/A'}</td>
+                                    <td>${cvssMetrics.cvss_v2.access_vector || 'N/A'}</td>
+                                    <td>${cvssMetrics.cvss_v2.confidentiality_impact || 'N/A'}</td>
+                                    <td>${cvssMetrics.cvss_v2.integrity_impact || 'N/A'}</td>
+                                    <td>${cvssMetrics.cvss_v2.availability_impact || 'N/A'}</td>
+                                </tr>
+                            </table>
+                        ` : ''}
+                        ${cvssMetrics && cvssMetrics.cvss_v3 ? `
+                            <h2>CVSS v3 Metrics</h2>
+                            <table>
+                                <tr>
+                                    <th>Base Score</th>
+                                    <th>Vector String</th>
+                                    <th>Attack Vector</th>
+                                    <th>Confidentiality Impact</th>
+                                    <th>Integrity Impact</th>
+                                    <th>Availability Impact</th>
+                                </tr>
+                                <tr>
+                                    <td>${cvssMetrics.cvss_v3.base_score || 'N/A'}</td>
+                                    <td>${cvssMetrics.cvss_v3.vector_string || 'N/A'}</td>
+                                    <td>${cvssMetrics.cvss_v3.attack_vector || 'N/A'}</td>
+                                    <td>${cvssMetrics.cvss_v3.confidentiality_impact || 'N/A'}</td>
+                                    <td>${cvssMetrics.cvss_v3.integrity_impact || 'N/A'}</td>
+                                    <td>${cvssMetrics.cvss_v3.availability_impact || 'N/A'}</td>
+                                </tr>
+                            </table>
+                        ` : ''}
+                        ${(!cvssMetrics || (!cvssMetrics.cvss_v2 && !cvssMetrics.cvss_v3)) ? 'N/A' : ''}
+                    `;
+
+                    // Assemble the CVE details HTML
+                    const cveDetailsHTML = `
+                        <div>
+                            <strong>CVE ID:</strong> ${cve.cve_id || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Identifier:</strong> ${cve.identifier || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Status:</strong> ${cve.status || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Published Date:</strong> ${new Date(cve.published_date).toLocaleString() || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Last Modified Date:</strong> ${new Date(cve.last_modified_date).toLocaleString() || 'N/A'}
+                        </div>
+                        <div>
+                            ${descriptionsHTML || 'No descriptions available'}
+                        </div>
+                        <div id="cpe-info">
+                            <h2>CPE Information:</h2>
+
+                            <table>
+                                <tr>
+                                    <th>CPE Criteria</th>
+                                    <th>CPE Match Criteria ID</th>
+                                    <th>CPE Vulnerable</th>
+                                </tr>    
+
+                                <tr>
+                                    <td>${cve.cpe_criteria || 'N/A'}</td>
+                                    <td>${cve.cpe_match_criteria_id}</td>
+                                    <td>${cve.cpe_vulnerable === 1 ? 'Yes' : 'No'}</td>
+                            </table>
+                        </div>
+                        <div id="metrics">${cvssMetricsHTML}</div>
+                    `;
+
+                    document.getElementById('cve-details').innerHTML = cveDetailsHTML;
+                })
+                .catch(error => {
+                    document.getElementById('cve-details').innerHTML = 'Error fetching CVE data';
+                    console.error(error);
+                });
+        }
+
+        loadCveDetails();
+    </script>
+</body>
+</html>
