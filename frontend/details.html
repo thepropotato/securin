@@ -18,13 +18,12 @@
     <div id="cve-details" class="cve-details"></div>
 
     <script>
-        // Function to get query parameter from URL
+
         function getQueryParam(param) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(param);
         }
 
-        // Fetch CVE data
         function loadCveDetails() {
             const cveId = getQueryParam('cve_id');
             if (!cveId) {
@@ -95,7 +94,6 @@
                         ${(!cvssMetrics || (!cvssMetrics.cvss_v2 && !cvssMetrics.cvss_v3)) ? 'N/A' : ''}
                     `;
 
-                    // Assemble the CVE details HTML
                     const cveDetailsHTML = `
                         <div>
                             <strong>CVE ID:</strong> ${cve.cve_id || 'N/A'}

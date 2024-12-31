@@ -6,7 +6,6 @@ import json
 API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 DATABASE = "cve_data.db"
 
-# Fetch CVE data from NVD API
 def fetch_cve_data(start_index=0, results_per_page=2000):
     params = {
         "startIndex": start_index,
@@ -19,7 +18,6 @@ def fetch_cve_data(start_index=0, results_per_page=2000):
         print(f"Failed to fetch data: {response.status_code}")
         return None
 
-# Save CVE data to database
 def save_cve_data(cve_items):
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
@@ -69,17 +67,14 @@ def save_cve_data(cve_items):
                 "impact_score": metrics_v2[0]["cvssData"].get("impactScore")
             }
 
-        # Combine both CVSS V3 and V2 into one JSON object
         cvss_metrics = {}
         if cvss_v3_data:
             cvss_metrics["cvss_v3"] = cvss_v3_data
         if cvss_v2_data:
             cvss_metrics["cvss_v2"] = cvss_v2_data
 
-        # Convert the CVSS metrics to a JSON string to store in the database
         cvss_metrics = json.dumps(cvss_metrics)
 
-        # Extracting CPE data
         cpe_data = item["cve"].get("configurations", {})
         cpe_data = cpe_data[0].get("nodes", []) if len(cpe_data) > 0 else []
 
@@ -95,7 +90,6 @@ def save_cve_data(cve_items):
                         cpe_match_criteria_id = cpe.get("matchCriteriaId")
                         cpe_vulnerable = cpe.get("vulnerable")
 
-        # Inserting data
         try:
             cursor.execute('''
                 INSERT OR IGNORE INTO cves (
@@ -113,7 +107,6 @@ def save_cve_data(cve_items):
     conn.commit()
     conn.close()
 
-# Periodic sync
 def periodic_sync():
     start_index = 0
     results_per_page = 2000

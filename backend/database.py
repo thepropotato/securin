@@ -4,7 +4,6 @@ def create_database():
     conn = sqlite3.connect('cve_data.db')
     cursor = conn.cursor()
 
-    # Create table for CVE data
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS cves (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -67,12 +67,12 @@
                 .then(response => response.json())
                 .then(data => {
                     tableBody.innerHTML = '';
-                    totalRecords = data.total_records; // Store total number of records
-                    totalPages = Math.ceil(totalRecords / pageSize); // Calculate total pages
+                    totalRecords = data.total_records; 
+                    totalPages = Math.ceil(totalRecords / pageSize);
                     data.data.forEach(item => {
                         const row = document.createElement('tr');
-                        const publishedDate = parseDate(item.published_date); // Parse and format the date
-                        const lastModifiedDate = parseDate(item.last_modified_date); // Parse and format the date
+                        const publishedDate = parseDate(item.published_date); 
+                        const lastModifiedDate = parseDate(item.last_modified_date);
                         row.innerHTML = ` 
                             <td>${item.cve_id || 'N/A'}</td>
                             <td>${item.identifier || 'N/A'}</td>
@@ -94,7 +94,6 @@
         function updatePaginationControls() {
             paginationControls.innerHTML = '';
 
-            // Previous button
             const previousButton = document.createElement('button');
             previousButton.textContent = 'Previous';
             previousButton.disabled = currentPage <= 1;
@@ -104,7 +103,6 @@
             });
             paginationControls.appendChild(previousButton);
 
-            // Page buttons (showing 5 at a time)
             const startPage = currentPage;
             const endPage = Math.min(currentPage + 4, totalPages);
 
@@ -138,7 +136,7 @@
 
         resultsPerPage.addEventListener('change', (e) => {
             pageSize = parseInt(e.target.value, 10);
-            currentPage = 1; // Reset to first page when changing page size
+            currentPage = 1; 
             fetchData(currentPage, pageSize);
         });
 
